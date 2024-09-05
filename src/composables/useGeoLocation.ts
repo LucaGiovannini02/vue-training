@@ -1,4 +1,3 @@
-// composables/useGeoLocation.ts
 import { ref, reactive } from 'vue';
 import { GeoResponse } from '../Models/GeoResponse';
 import { OpenStreetMapResponse } from '../Models/OpenStreetMapResponse';
