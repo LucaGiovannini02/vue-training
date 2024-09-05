@@ -1,76 +1,12 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
+import Alert from './components/Alert.vue';
 import Form from './components/Form.vue';
 import IpInfo from './components/IpInfo.vue';
 import Map from './components/Map.vue';
-import { onMounted, reactive, ref } from 'vue';
-import { GeoAPI } from './utils/axios';
-import { OpenStreetMapAPI } from './utils/axios';
-import { GeoResponse } from './Models/GeoResponse';
-import { OpenStreetMapResponse } from './Models/OpenStreetMapResponse';
-import { isIP } from 'is-ip';
-import isValidDomain from 'is-valid-domain';
-import Alert from './components/Alert.vue';
+import useGeoLocation from './composables/useGeoLocation';
 
-const showError = ref(false)
-let lastSubmit = ''
-const errorMessage = ref('')
-
-const info = reactive({
-  ip: '',
-  location: '',
-  timezone: '',
-  isp: '',
-})
-
-const location = reactive({
-  lat: 0,
-  lon: 0
-})
-
-const getPosition = (ipOrDomain: string | null = null, ignoreRepeat: boolean = false) => {
-  if(ipOrDomain == lastSubmit && !ignoreRepeat) return
-
-  let endpoint = "country"
-
-  if (ipOrDomain != null && ipOrDomain != '') {
-    if (isIP(ipOrDomain)) {
-      endpoint += `?ipAddress=${ipOrDomain}`
-    } else if (isValidDomain(ipOrDomain)) {
-      endpoint += `?domain=${ipOrDomain}`
-    } else {
-      errorMessage.value = "Invalid ip or domain"
-      showError.value = true
-      setTimeout(() => showError.value = false, 4000)
-      return
-    }
-  }
-
-  info.ip = ''
-  info.location = ''
-  info.timezone = ''
-  info.isp = ''
-
-  GeoAPI.get<GeoResponse>(endpoint).then((data) => {
-    info.ip = data.data.ip
-    info.location = data.data.location.region + ", " + data.data.location.country
-    info.timezone = data.data.location.timezone
-    info.isp = data.data.isp
-
-    OpenStreetMapAPI.get<OpenStreetMapResponse>(`search?format=json&q=${info.location}`).then((data) => {
-      location.lat = Number(data.data[0].lat)
-      location.lon = Number(data.data[0].lon)
-    })
-
-    if(ipOrDomain) lastSubmit = ipOrDomain
-  }).catch((err) => {
-    if(err.response.status == 400) {
-      errorMessage.value = `'${ipOrDomain}' not found`
-      getPosition(lastSubmit, true)
-      showError.value = true
-      setTimeout(() => showError.value = false, 4000)
-    }
-  })
-}
+const { info, location, getPosition, showError, errorMessage, pending } = useGeoLocation();
 
 onMounted(() => {
   getPosition()
@@ -83,12 +19,12 @@ onMounted(() => {
     <h1 class="mb-8 md:mb-14 lg:mb-0 text-white text-3xl font-semibold">IP Address Tracker</h1>
     <Form @submit:value="getPosition($event)" />
     <div class="h-[50px]"></div>
-    <div class="absolute bottom-half z-10">
+    <div class="absolute bottom-half z-20">
       <IpInfo :ip="info.ip" :location="info.location" :timezone="info.timezone" :isp="info.isp" />
     </div>
   </div>
   <div class="h-[75%] lg:h-[70%] w-full">
-    <Map :lat="location.lat" :lon="location.lon" />
+    <Map :loading="pending" :lat="location.lat" :lon="location.lon" />
   </div>
   <Transition>
     <Alert v-if="showError" :message="errorMessage" />
