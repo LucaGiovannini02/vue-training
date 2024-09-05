@@ -54,9 +54,6 @@ const getPosition = (ipOrDomain: string | null = null) => {
     OpenStreetMapAPI.get<OpenStreetMapResponse>(`search?format=json&q=${info.location}`).then((data) => {
       location.lat = Number(data.data[0].lat)
       location.lon = Number(data.data[0].lon)
-
-      console.log(location.lat)
-      console.log(location.lon)
     })
   })
 }
