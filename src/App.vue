@@ -11,7 +11,9 @@ import { isIP } from 'is-ip';
 import isValidDomain from 'is-valid-domain';
 import Alert from './components/Alert.vue';
 
-let showError = ref(false)
+const showError = ref(false)
+let lastSubmit = ''
+const errorMessage = ref('')
 
 const info = reactive({
   ip: '',
@@ -25,7 +27,9 @@ const location = reactive({
   lon: 0
 })
 
-const getPosition = (ipOrDomain: string | null = null) => {
+const getPosition = (ipOrDomain: string | null = null, ignoreRepeat: boolean = false) => {
+  if(ipOrDomain == lastSubmit && !ignoreRepeat) return
+
   let endpoint = "country"
 
   if (ipOrDomain != null && ipOrDomain != '') {
@@ -34,6 +38,7 @@ const getPosition = (ipOrDomain: string | null = null) => {
     } else if (isValidDomain(ipOrDomain)) {
       endpoint += `?domain=${ipOrDomain}`
     } else {
+      errorMessage.value = "Invalid ip or domain"
       showError.value = true
       setTimeout(() => showError.value = false, 4000)
       return
@@ -55,6 +60,15 @@ const getPosition = (ipOrDomain: string | null = null) => {
       location.lat = Number(data.data[0].lat)
       location.lon = Number(data.data[0].lon)
     })
+
+    if(ipOrDomain) lastSubmit = ipOrDomain
+  }).catch((err) => {
+    if(err.response.status == 400) {
+      errorMessage.value = `'${ipOrDomain}' not found`
+      getPosition(lastSubmit, true)
+      showError.value = true
+      setTimeout(() => showError.value = false, 4000)
+    }
   })
 }
 
@@ -77,7 +91,7 @@ onMounted(() => {
     <Map :lat="location.lat" :lon="location.lon" />
   </div>
   <Transition>
-    <Alert v-if="showError" message="Invalid ip or domain" />
+    <Alert v-if="showError" :message="errorMessage" />
   </Transition>
 </template>
 
