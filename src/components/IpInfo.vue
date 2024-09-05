@@ -15,7 +15,7 @@ const isp = toRef(props, 'isp')
 </script>
 
 <template>
-    <div class="text-center lg:flex rounded-2xl overflow-hidden">
+    <div class="text-center md:text-left lg:flex rounded-2xl overflow-hidden">
         <InfoCard title="IP ADRRESS" :content="ip" :skeleton="ip == ''" />
 
         <InfoCard title="LOCATION" :content="location" :skeleton="location == ''" />
