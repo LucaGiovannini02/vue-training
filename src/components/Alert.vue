@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, toRef, watch } from 'vue';
+import { toRef } from 'vue';
 
 const props = defineProps({ message: String, show: Boolean })
 const message = toRef(props, 'message')
